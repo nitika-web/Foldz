@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Foldz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f3f4; --panel:#ffffff; --fg:#111113; --muted:#85858c; --line:#e4e4e7; --track:#ececef; --shadow:rgba(20,20,25,.32);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e0e0f; --panel:#181819; --fg:#f2f2f3; --muted:#8c8c93; --line:#2a2a2d; --track:#242427; --shadow:rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e0e0f; --panel:#181819; --fg:#f2f2f3; --muted:#8c8c93; --line:#2a2a2d; --track:#242427; --shadow:rgba(0,0,0,.7);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation;overscroll-behavior:none}
+body{
+  height:100%;margin:0;overflow:hidden;
+  background:var(--bg);color:var(--fg);
+  font:14px/1.4 'Instrument Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;overscroll-behavior:none;
+}
+img,canvas{-webkit-user-drag:none;user-drag:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px;border-radius:6px}
+
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 4px;grid-column:1/-1}
+.brand{font-weight:600;font-size:17px;letter-spacing:-.02em}
+.seed{display:flex;align-items:center;gap:4px;color:var(--muted);font-variant-numeric:tabular-nums}
+.iconbtn{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:var(--fg)}
+.iconbtn:disabled{opacity:.25;cursor:default}
+.iconbtn svg{width:16px;height:16px}
+
+/* stage */
+.stage{min-height:0;display:grid;place-items:center;padding:8px 20px 14px;overflow:hidden}
+#cv{display:block;box-shadow:0 30px 60px -28px var(--shadow),0 0 0 1px rgba(128,128,128,.14)}
+
+/* panel */
+.panel{background:var(--panel);border-radius:24px 24px 0 0;padding:6px 18px 16px;box-shadow:0 -1px 0 var(--line)}
+.panel>*{width:100%;max-width:560px;margin-inline:auto}
+.tabs{display:flex;gap:22px;padding:6px 0 2px}
+.tab{padding:8px 0;color:var(--muted);font-weight:500;position:relative}
+.tab[aria-selected="true"]{color:var(--fg)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:2px;border-radius:2px;background:var(--fg)}
+.sections{min-height:152px;padding-top:8px}
+.sec{display:none}
+.sec.active{display:block}
+.sec-title{display:none}
+
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--track);border-radius:12px;padding:3px;margin-bottom:4px}
+.seg button{height:31px;border-radius:9px;font-weight:500;color:var(--muted);transition:background .15s,color .15s}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+
+.row{display:grid;grid-template-columns:76px 1fr 34px;align-items:center;min-height:36px;gap:6px}
+.row>span{color:var(--muted)}
+.row output{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:32px;margin:0;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;border-radius:2px;background:linear-gradient(to right,var(--fg) var(--p,50%),var(--line) var(--p,50%))}
+input[type=range]::-moz-range-track{height:2px;border-radius:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:2px;border-radius:2px;background:var(--fg)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-9px;border-radius:50%;background:var(--fg);border:0;box-shadow:0 0 0 4px var(--panel)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--fg);border:0;box-shadow:0 0 0 4px var(--panel)}
+
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:10px 8px;padding:6px 2px 8px}
+.sw{width:100%;max-width:46px;aspect-ratio:1;justify-self:center;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(128,128,128,.25);transition:box-shadow .15s}
+.sw[aria-checked="true"]{box-shadow:inset 0 0 0 1px rgba(128,128,128,.25),0 0 0 2px var(--panel),0 0 0 3.5px var(--fg)}
+.switch-row{display:flex;align-items:center;justify-content:space-between;min-height:36px}
+.switch-row span{color:var(--muted)}
+.switch{width:44px;height:26px;border-radius:13px;background:var(--track);position:relative;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--fg)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
+
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{text-align:left;padding:8px 12px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--line);display:flex;flex-direction:column;line-height:1.25}
+.chip small{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{box-shadow:inset 0 0 0 1.5px var(--fg)}
+
+.actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:12px}
+.btn{height:48px;border-radius:14px;font-weight:500;font-size:15px;box-shadow:inset 0 0 0 1px var(--line);transition:transform .1s}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--fg);color:var(--bg);box-shadow:none}
+.btn:disabled{opacity:.6;cursor:default}
+
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 54px);transform:translate(-50%,-6px);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:999px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:5}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:20px;z-index:10}
+.sheet[hidden]{display:none}
+.sheet-card{background:var(--panel);border-radius:20px;padding:14px;max-width:420px;max-height:100%;display:flex;flex-direction:column;gap:10px}
+.sheet-card img{-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto;display:block;max-width:100%;max-height:60vh;object-fit:contain;border-radius:12px;margin:0 auto}
+.sheet-card p{margin:0;color:var(--muted);text-align:center}
+
+/* side-by-side layout: desktops, tablets in landscape, phones in landscape */
+@media (min-width:860px), (min-width:600px) and (orientation:landscape){
+  .app{grid-template-columns:minmax(0,1fr) clamp(280px,34vw,380px);grid-template-rows:auto minmax(0,1fr)}
+  header{padding:16px 24px 6px}
+  .stage{padding:10px 32px 32px}
+  .panel{border-radius:0;box-shadow:-1px 0 0 var(--line);padding:22px 24px;display:flex;flex-direction:column;overflow:auto;min-height:0}
+  .panel>*{max-width:none}
+  .tabs{display:none}
+  .sections{min-height:0;padding-top:0;display:flex;flex-direction:column;gap:24px;flex:1}
+  .sec,.sec.active{display:block}
+  .sec-title{display:block;color:var(--muted);font-weight:500;margin-bottom:8px}
+  .actions{margin-top:22px}
+}
+/* short screens (landscape phones, small windows): one section at a time */
+@media (max-height:640px){
+  .tabs{display:flex}
+  .sections{display:block;gap:0;flex:none;padding-top:8px;min-height:0}
+  .sec{display:none}
+  .sec.active{display:block}
+  .sec-title{display:none}
+  .stage{padding:6px 20px 10px}
+  .actions{margin-top:10px}
+  .btn{height:44px}
+  header{padding-top:8px}
+}
+/* compact portrait phones (SE, mini) */
+@media (max-height:720px) and (orientation:portrait){
+  .panel{padding:4px 16px 12px}
+  .sections{min-height:136px;padding-top:4px}
+  .swatches{gap:8px;padding:4px 2px 4px}
+  .sw{max-width:40px}
+  .row{min-height:32px}
+  .switch-row{min-height:32px}
+  .btn{height:44px}
+  .stage{padding:4px 16px 10px}
+}
+@media (max-width:360px){
+  .tabs{gap:16px}
+  .row{grid-template-columns:68px 1fr 30px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="brand">Foldz</span>
+    <div class="seed">
+      <button class="iconbtn" id="back" aria-label="Previous wallpaper" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>
+      </button>
+      <span id="seed">#00000</span>
+    </div>
+  </header>
+
+  <main class="stage" id="stage"><canvas id="cv" aria-label="Wallpaper preview"></canvas></main>
+
+  <section class="panel" aria-label="Controls">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="shape">Shape</button>
+      <button class="tab" role="tab" data-tab="color">Color</button>
+      <button class="tab" role="tab" data-tab="finish">Finish</button>
+      <button class="tab" role="tab" data-tab="size">Size</button>
+    </div>
+
+    <div class="sections">
+      <div class="sec" data-sec="shape">
+        <div class="sec-title">Shape</div>
+        <div class="seg" role="group" aria-label="Style">
+          <button data-style="sweep">Sweep</button>
+          <button data-style="orbs">Orbs</button>
+          <button data-style="waves">Waves</button>
+          <button data-style="dunes">Dunes</button>
+          <button data-style="arcs">Arcs</button>
+          <button data-style="bloom">Bloom</button>
+        </div>
+        <label class="row"><span>Layers</span><input type="range" id="layers" min="2" max="6" step="1"><output id="layers-v"></output></label>
+      </div>
+
+      <div class="sec" data-sec="color">
+        <div class="sec-title">Color</div>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Palette"></div>
+        <div class="switch-row"><span id="inv-l">Invert</span><button class="switch" id="invert" role="switch" aria-checked="false" aria-labelledby="inv-l"></button></div>
+      </div>
+
+      <div class="sec" data-sec="finish">
+        <div class="sec-title">Finish</div>
+        <label class="row"><span>Softness</span><input type="range" id="softness" min="0" max="100"><output id="softness-v"></output></label>
+        <label class="row"><span>Contrast</span><input type="range" id="contrast" min="0" max="100"><output id="contrast-v"></output></label>
+        <label class="row"><span>Grain</span><input type="range" id="grain" min="0" max="100"><output id="grain-v"></output></label>
+      </div>
+
+      <div class="sec" data-sec="size">
+        <div class="sec-title">Size</div>
+        <div class="chips" id="chips" role="group" aria-label="Wallpaper size"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="shuffle">Shuffle</button>
+      <button class="btn primary" id="save">Save wallpaper</button>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-card">
+    <img id="sheet-img" alt="Your wallpaper">
+    <p>Press and hold the image to save it.</p>
+    <button class="btn" id="sheet-close">Done</button>
+  </div>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const TAU = Math.PI * 2;
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const mix = (a, b, t) => a + (b - a) * t;
+
+function rng32(seed){
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const sub = (seed, i) => rng32((Math.imul(seed | 0, 2654435761) + Math.imul(i + 1, 40503) + 977) >>> 0);
+const rr = (g, a, b) => a + (b - a) * g();
+
+/* ---------- palettes (dark -> light) ---------- */
+const PALETTES = {
+  mono:   { name: 'Mono',   stops: ['#000000', '#ffffff'] },
+  cobalt: { name: 'Cobalt', stops: ['#02040d', '#16256a', '#5b7fe0', '#eaf0ff'] },
+  ember:  { name: 'Ember',  stops: ['#0c0402', '#5c1a0b', '#dc5a2e', '#fff0e2'] },
+  moss:   { name: 'Moss',   stops: ['#020a06', '#11382b', '#55a37c', '#eef8ef'] },
+  dusk:   { name: 'Dusk',   stops: ['#06030d', '#39206f', '#a860d6', '#ffe4f2'] },
+  sand:   { name: 'Sand',   stops: ['#0e0b08', '#54463a', '#b9a68d', '#f8f2e8'] },
+  rose:   { name: 'Rose',   stops: ['#0d0508', '#5a1230', '#e0577f', '#ffe8ee'] },
+  ice:    { name: 'Ice',    stops: ['#020a12', '#0e4a6b', '#6cc4e0', '#f0fbff'] },
+  sunset: { name: 'Sunset', stops: ['#0a0414', '#4b1a6b', '#e0506e', '#ffb35c', '#fff3dc'] },
+  aurora: { name: 'Aurora', stops: ['#020612', '#0b4a55', '#3fd0a0', '#b6a4ff', '#f4fff8'] },
+};
+function hex2rgb(h){ const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function makeRamp(stops){
+  const rgb = stops.map(hex2rgb);
+  return l => {
+    const p = clamp(l) * (rgb.length - 1);
+    const i = Math.min(rgb.length - 2, Math.floor(p));
+    const t = p - i, a = rgb[i], b = rgb[i + 1];
+    return [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
+  };
+}
+
+/* ---------- scene generation (normalised, seed-driven) ---------- */
+function sheet(g, o){
+  const A = [rr(g, 1.0, 1.12), rr(g, o.ay[0], o.ay[1])];
+  const B = [rr(g, -.16, -.04), rr(g, o.by[0], o.by[1])];
+  const c1 = [A[0] - rr(g, .05, .22), A[1] + rr(g, .12, .3)];
+  const c2 = [B[0] + rr(g, .4, .62), B[1] - rr(g, .12, .38)];
+  return {
+    t: 'sheet', z: o.z, A, B, c1, c2,
+    far: rr(g, .78, .98), mid: rr(g, .22, .5), edge: rr(g, .85, 1),
+    mp: rr(g, .35, .55), rim: rr(g, .7, 1),
+  };
+}
+function orb(g, o){
+  return Object.assign({
+    t: 'orb',
+    wob: Array.from({ length: 12 }, () => rr(g, -.014, .014)),
+    rot: rr(g, -.5, .5), dx: rr(g, -.5, .2), dy: rr(g, -.2, .5), rim: rr(g, .7, 1),
+  }, o);
+}
+function sweepRole(role, g){
+  switch (role){
+    case 'sheet': return sheet(g, { ay: [-.08, .1], by: [.42, .64], z: 1 });
+    case 'orb':   return orb(g, { cx: rr(g, -.05, .35), top: rr(g, .45, .62), rx: rr(g, .5, .72), ry: rr(g, .55, .75), core: rr(g, 0, .07), edge: rr(g, .22, .45), z: 4 });
+    case 'lobe':  return orb(g, { cx: rr(g, 1.0, 1.12), cy: rr(g, .55, .72), rx: rr(g, .16, .26), ry: rr(g, .34, .5), core: rr(g, .3, .5), edge: rr(g, .62, .85), dx: rr(g, -.6, -.2), dy: rr(g, -.3, .2), z: 2 });
+    case 'sheet2':{ const s = sheet(g, { ay: [.04, .2], by: [.22, .36], z: 3 }); s.far = rr(g, .5, .85); s.mid = rr(g, .12, .38); return s; }
+    case 'orb2':  return orb(g, { cx: rr(g, .55, 1.05), cy: rr(g, .5, .85), rx: rr(g, .15, .3), ry: rr(g, .15, .3), core: rr(g, .25, .6), edge: rr(g, .6, .9), z: 5 });
+    default:      return orb(g, { cx: rr(g, -.12, .05), cy: rr(g, .25, .55), rx: rr(g, .14, .24), ry: rr(g, .3, .45), core: rr(g, .3, .55), edge: rr(g, .6, .85), z: 3.5 });
+  }
+}
+const SWEEP_ROLES = ['sheet', 'orb', 'lobe', 'sheet2', 'orb2', 'lobe2'];
+function orbRand(g){
+  const rx = rr(g, .28, .68);
+  const core = rr(g, 0, .5);
+  return orb(g, { cx: rr(g, -.1, 1.1), cy: rr(g, .1, 1.1), rx, ry: rx * rr(g, .85, 1.25), core, edge: clamp(core + rr(g, .2, .5), 0, 1), z: -rx });
+}
+function wave(g, i, n){
+  const t = n > 1 ? i / (n - 1) : 0;
+  const by = .9 - .55 * t;
+  const o = sheet(g, { ay: [-.1 + .28 * t, .3 * t], by: [by - .05, by + .05], z: i });
+  const light = i % 2 === 0;
+  o.far = rr(g, light ? .7 : .25, light ? .98 : .55);
+  o.mid = rr(g, light ? .25 : .05, light ? .55 : .35);
+  o.edge = rr(g, light ? .85 : .55, 1);
+  return o;
+}
+function dune(g, i, n){
+  const t = n > 1 ? i / (n - 1) : 0;
+  const y0 = .3 + t * .5 + rr(g, -.04, .04), y1 = y0 + rr(g, -.16, .16);
+  const A = [-.1, y0], B = [1.1, y1];
+  const base = mix(.85, .15, t);
+  return {
+    t: 'sheet', span: true, z: i, A, B,
+    c1: [rr(g, .2, .4), y0 + rr(g, -.22, .22)], c2: [rr(g, .6, .8), y1 + rr(g, -.22, .22)],
+    far: clamp(base - rr(g, .1, .3)), mid: base, edge: clamp(base + rr(g, .2, .4)), mp: rr(g, .35, .55), rim: rr(g, .7, 1),
+  };
+}
+function ring(g, i, n, c){
+  const t = n > 1 ? i / (n - 1) : 0;
+  const rad = c.R * (1 - i * (.72 / n));
+  const core = clamp(mix(.55, .02, t) + rr(g, -.05, .05));
+  return orb(g, {
+    cx: c.cx + i * c.sx, cy: c.cy + i * c.sy, rx: rad, ry: rad, rot: 0,
+    core, edge: clamp(core + rr(g, .22, .38)), dx: rr(g, -.3, .3), dy: rr(g, -.3, .3), z: i,
+  });
+}
+function petal(g, i, m, c){
+  const ang = c.a0 + i / m * TAU;
+  const core = rr(g, 0, .45);
+  return orb(g, {
+    polar: true, px: c.px, py: c.py, ang, d: c.d, rx: c.w, ry: c.len, rot: ang - Math.PI / 2,
+    core, edge: clamp(core + rr(g, .25, .45)), dx: rr(g, -.3, .3), dy: rr(g, -.3, .3), z: i,
+  });
+}
+function buildScene(p){
+  const g0 = sub(p.seed, 0);
+  let fx = g0() < .5, fy = g0() < .28;
+  const range = {
+    sweep: [[.5, .78], [.02, .22]], orbs: [[.55, .9], [.04, .3]], waves: [[.7, .95], [.15, .45]],
+    dunes: [[.6, .95], [.25, .55]], arcs: [[.4, .8], [.02, .3]], bloom: [[.55, .9], [.05, .35]],
+  }[p.style];
+  const bg = {
+    ang: rr(g0, .8, 2.1), l0: rr(g0, range[0][0], range[0][1]), l1: rr(g0, range[1][0], range[1][1]),
+    bx: rr(g0, .1, .9), by: rr(g0, .1, .9), br: rr(g0, .4, .9), bl: rr(g0, .6, 1), ba: rr(g0, .15, .4),
+  };
+  const cc = {
+    cx: rr(g0, .1, .9), cy: rr(g0, .25, 1), R: rr(g0, .55, .9), sx: rr(g0, -.03, .03), sy: rr(g0, -.03, .03),
+    px: rr(g0, .35, .65), py: rr(g0, .4, .65), d: rr(g0, .14, .24), len: rr(g0, .34, .5), w: rr(g0, .13, .2), a0: rr(g0, 0, TAU),
+    ang: rr(g0, 1.35, 1.8),
+  };
+  if (p.style === 'dunes') bg.ang = cc.ang;
+  if (p.style === 'arcs' || p.style === 'bloom') fx = fy = false;
+  const layers = [];
+  const count = p.style === 'bloom' ? p.layers + 2 : p.layers;
+  for (let i = 0; i < count; i++){
+    const g = sub(p.seed, i + 1);
+    switch (p.style){
+      case 'sweep': layers.push(sweepRole(SWEEP_ROLES[i], g)); break;
+      case 'orbs':  layers.push(orbRand(g)); break;
+      case 'waves': layers.push(wave(g, i, count)); break;
+      case 'dunes': layers.push(dune(g, i, count)); break;
+      case 'arcs':  layers.push(ring(g, i, count, cc)); break;
+      default:      layers.push(petal(g, i, count, cc));
+    }
+  }
+  layers.sort((a, b) => a.z - b.z);
+  return { fx, fy, bg, layers };
+}
+
+/* ---------- drawing ---------- */
+function smoothClosed(pts){
+  const n = pts.length, path = new Path2D();
+  path.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 0; i < n; i++){
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    path.bezierCurveTo(
+      p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6,
+      p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6,
+      p2[0], p2[1]);
+  }
+  path.closePath();
+  return path;
+}
+const bz = (t, a, b, c, d) => { const m = 1 - t; return m * m * m * a + 3 * m * m * t * b + 3 * m * t * t * c + t * t * t * d; };
+
+function addStops(grad, stops, fn){
+  for (let i = 0; i < stops.length - 1; i++){
+    const [p0, l0] = stops[i], [p1, l1] = stops[i + 1];
+    for (let j = i ? 1 : 0; j <= 8; j++){
+      const t = j / 8, e = t * t * (3 - 2 * t);
+      grad.addColorStop(mix(p0, p1, t), fn(mix(l0, l1, e)));
+    }
+  }
+}
+
+function grain(ctx, W, H, amt, seed){
+  if (amt <= 0) return;
+  const img = ctx.getImageData(0, 0, W, H), d = img.data;
+  let s = (Math.imul(seed | 0, 2654435761) | 0) || 1;
+  const a = amt * 18;
+  for (let i = 0; i < d.length; i += 4){
+    s ^= s << 13; s ^= s >>> 17; s ^= s << 5;
+    const n = (((s >>> 0) / 4294967296) - .5) * 2 * a;
+    d[i] += n; d[i + 1] += n; d[i + 2] += n;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function render(ctx, W, H, p){
+  const L = Math.sqrt(W * H), u = L / 1000;
+  const sf = .35 + p.softness * 1.3;
+  const k = .55 + p.contrast * 1.0;
+  const ramp = makeRamp(PALETTES[p.palette].stops);
+  const raw = (l, a = 1) => { const c = ramp(l); return `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`; };
+  const tone = (l, a = 1) => { let v = (l - .5) * k + .5; if (p.invert) v = 1 - v; return raw(v, a); };
+  const S = buildScene(p);
+  const X = x => (S.fx ? 1 - x : x) * W, Y = y => (S.fy ? 1 - y : y) * H;
+  const sx = S.fx ? -1 : 1, sy = S.fy ? -1 : 1;
+  const OFF = W * 3;
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  // blurred stroke that only shows its shadow (works without ctx.filter)
+  function glow(path, color, width, blur){
+    ctx.save();
+    ctx.translate(-OFF, 0);
+    ctx.shadowColor = color; ctx.shadowBlur = blur; ctx.shadowOffsetX = OFF; ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = '#000'; ctx.lineWidth = width; ctx.lineJoin = 'round';
+    ctx.stroke(path);
+    ctx.restore();
+  }
+  function castShadow(path, fill, blur, alpha){
+    ctx.save();
+    ctx.shadowColor = raw(0, alpha); ctx.shadowBlur = blur;
+    ctx.shadowOffsetX = .012 * L * sx; ctx.shadowOffsetY = .03 * L * sy;
+    ctx.fillStyle = fill; ctx.fill(path);
+    ctx.restore();
+  }
+
+  // background
+  {
+    const b = S.bg, dx = Math.cos(b.ang) * sx, dy = Math.sin(b.ang) * sy;
+    const half = (Math.abs(dx) * W + Math.abs(dy) * H) / 2;
+    const g = ctx.createLinearGradient(W / 2 - dx * half, H / 2 - dy * half, W / 2 + dx * half, H / 2 + dy * half);
+    addStops(g, [[0, b.l0], [1, b.l1]], l => tone(l));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const bx = X(b.bx), by = Y(b.by), br = b.br * L;
+    const rg = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+    rg.addColorStop(0, tone(b.bl, b.ba)); rg.addColorStop(.5, tone(b.bl, b.ba * .35)); rg.addColorStop(1, tone(b.bl, 0));
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
+
+  const shadowAlpha = .3 + p.contrast * .45;
+
+  for (const o of S.layers){
+    if (o.t === 'sheet'){
+      const A = [X(o.A[0]), Y(o.A[1])], B = [X(o.B[0]), Y(o.B[1])];
+      const c1 = [X(o.c1[0]), Y(o.c1[1])], c2 = [X(o.c2[0]), Y(o.c2[1])];
+      const curve = new Path2D();
+      curve.moveTo(A[0], A[1]);
+      curve.bezierCurveTo(c1[0], c1[1], c2[0], c2[1], B[0], B[1]);
+      const body = new Path2D(curve);
+      if (o.span){
+        body.lineTo(X(1.6), Y(o.B[1]));
+        body.lineTo(X(1.6), Y(1.6));
+        body.lineTo(X(-.6), Y(1.6));
+        body.lineTo(X(-.6), Y(o.A[1]));
+      } else {
+        body.lineTo(X(-.6), Y(o.B[1]));
+        body.lineTo(X(-.6), Y(-.6));
+        body.lineTo(X(1.6), Y(-.6));
+      }
+      body.closePath();
+
+      const M = [bz(.5, A[0], c1[0], c2[0], B[0]), bz(.5, A[1], c1[1], c2[1], B[1])];
+      const P0 = o.span ? [X(.5), Y(1.15)] : [X(0), Y(0)];
+      const grad = ctx.createLinearGradient(P0[0], P0[1], M[0], M[1]);
+      addStops(grad, [[0, o.far], [o.mp, o.mid], [1, o.edge]], l => tone(l));
+
+      castShadow(body, grad, .11 * L * sf, shadowAlpha);
+
+      ctx.save();
+      ctx.clip(body);
+      glow(curve, tone(o.edge, .75 * o.rim), .1 * L, .1 * L * sf);
+      const hg = ctx.createLinearGradient(A[0], A[1], B[0], B[1]);
+      if (o.span){ hg.addColorStop(0, tone(1, .25 * o.rim)); hg.addColorStop(.5, tone(1, o.rim)); hg.addColorStop(1, tone(1, .25 * o.rim)); }
+      else { hg.addColorStop(0, tone(1, 0)); hg.addColorStop(.35, tone(1, .5 * o.rim)); hg.addColorStop(.62, tone(1, o.rim)); hg.addColorStop(1, tone(1, .35 * o.rim)); }
+      glow(curve, tone(1, .55 * o.rim), 3 * u, .014 * L * sf);
+      ctx.strokeStyle = hg; ctx.lineWidth = Math.max(1.2, 1.7 * u); ctx.stroke(curve);
+      ctx.restore();
+    } else {
+      let cx, cy;
+      if (o.polar){ cx = o.px * W + Math.cos(o.ang) * o.d * L; cy = o.py * H + Math.sin(o.ang) * o.d * L; }
+      else { const cyN = o.top !== undefined ? o.top + (o.ry * L) / H : o.cy; cx = X(o.cx); cy = Y(cyN); }
+      const rx = o.rx * L, ry = o.ry * L;
+      const rot = (S.fx !== S.fy) ? -o.rot : o.rot, cs = Math.cos(rot), sn = Math.sin(rot);
+      const pts = [];
+      for (let i = 0; i < 12; i++){
+        const a = i / 12 * TAU, r = 1 + o.wob[i];
+        const x = Math.cos(a) * rx * r, y = Math.sin(a) * ry * r;
+        pts.push([cx + x * cs - y * sn, cy + x * sn + y * cs]);
+      }
+      const path = smoothClosed(pts);
+      const gx = cx + sx * o.dx * rx, gy = cy + sy * o.dy * ry;
+      const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, Math.max(rx, ry) * 1.25);
+      addStops(grad, [[0, o.core], [.45, mix(o.core, o.edge, .12)], [.8, mix(o.core, o.edge, .6)], [1, o.edge]], l => tone(l));
+
+      castShadow(path, grad, .09 * L * sf, shadowAlpha * .9);
+
+      ctx.save();
+      ctx.clip(path);
+      glow(path, tone(o.edge + .15, .5 * o.rim), .07 * L, .09 * L * sf);
+      ctx.strokeStyle = tone(o.edge + .3, .3 * o.rim); ctx.lineWidth = Math.max(1, 1.3 * u); ctx.stroke(path);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+  grain(ctx, W, H, p.grain, p.seed);
+}
+
+/* ---------- app state ---------- */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const SIZES = {
+  phone:   { w: 1290, h: 2796, name: 'Phone' },
+  tablet:  { w: 2048, h: 2732, name: 'Tablet' },
+  desktop: { w: 3840, h: 2160, name: 'Desktop' },
+  square:  { w: 2048, h: 2048, name: 'Square' },
+};
+const newSeed = () => 1 + Math.floor(Math.random() * 99999);
+let state = { seed: 15, style: 'sweep', layers: 3, palette: 'mono', invert: false, softness: .5, contrast: .5, grain: .25, size: 'phone' };
+try {
+  const saved = JSON.parse(localStorage.getItem('foldz:v1') || 'null');
+  if (saved) state = Object.assign(state, saved, { seed: state.seed });
+} catch (e) {}
+const past = [];
+
+function persist(){
+  try {
+    const { style, layers, palette, invert, softness, contrast, grain, size } = state;
+    localStorage.setItem('foldz:v1', JSON.stringify({ style, layers, palette, invert, softness, contrast, grain, size }));
+  } catch (e) {}
+}
+
+/* ---------- canvas fit + draw ---------- */
+const cv = $('#cv');
+const cx = cv.getContext('2d', { willReadFrequently: true });
+let raf = 0;
+function schedule(){ if (raf) return; raf = requestAnimationFrame(() => { raf = 0; render(cx, cv.width, cv.height, state); }); }
+function fit(){
+  const st = $('#stage'), cs = getComputedStyle(st);
+  const aw = st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const ah = st.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const z = SIZES[state.size], ar = z.w / z.h;
+  let w = aw, h = w / ar;
+  if (h > ah){ h = ah; w = h * ar; }
+  w = Math.max(60, Math.floor(w)); h = Math.max(60, Math.floor(h));
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  cv.style.borderRadius = (ar < .8 ? Math.round(w * .1) : Math.round(Math.min(w, h) * .04)) + 'px';
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  render(cx, cv.width, cv.height, state);
+}
+new ResizeObserver(fit).observe($('#stage'));
+
+/* ---------- UI wiring ---------- */
+function setFill(el){ el.style.setProperty('--p', ((el.value - el.min) / (el.max - el.min) * 100) + '%'); }
+function updateSeed(){
+  $('#seed').textContent = '#' + String(state.seed).padStart(5, '0');
+  $('#back').disabled = past.length === 0;
+}
+function sync(){
+  $$('[data-style]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.style === state.style)));
+  $$('.sw').forEach(b => b.setAttribute('aria-checked', String(b.dataset.p === state.palette)));
+  $$('.chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === state.size)));
+  $('#invert').setAttribute('aria-checked', String(state.invert));
+  $('#layers').value = state.layers; $('#layers-v').textContent = state.layers;
+  for (const k of ['softness', 'contrast', 'grain']){
+    $('#' + k).value = Math.round(state[k] * 100); $('#' + k + '-v').textContent = Math.round(state[k] * 100);
+  }
+  $$('input[type=range]').forEach(setFill);
+  updateSeed();
+}
+
+// swatches + size chips
+$('#swatches').innerHTML = Object.entries(PALETTES).map(([id, p]) => {
+  const stops = [...p.stops].reverse().join(',');
+  return `<button class="sw" role="radio" data-p="${id}" aria-label="${p.name}" title="${p.name}" style="background:linear-gradient(135deg,${stops})"></button>`;
+}).join('');
+$('#chips').innerHTML = Object.entries(SIZES).map(([id, z]) =>
+  `<button class="chip" data-size="${id}" aria-pressed="false">${z.name}<small>${z.w} × ${z.h}</small></button>`).join('');
+
+$$('[data-style]').forEach(b => b.addEventListener('click', () => { state.style = b.dataset.style; sync(); persist(); schedule(); }));
+$('#swatches').addEventListener('click', e => { const b = e.target.closest('.sw'); if (!b) return; state.palette = b.dataset.p; sync(); persist(); schedule(); });
+$('#invert').addEventListener('click', () => { state.invert = !state.invert; sync(); persist(); schedule(); });
+$('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; state.size = b.dataset.size; sync(); persist(); fit(); });
+
+[['layers', 'layers', v => +v], ['softness', 'softness', v => v / 100], ['contrast', 'contrast', v => v / 100], ['grain', 'grain', v => v / 100]].forEach(([id, key, conv]) => {
+  const el = $('#' + id);
+  el.addEventListener('input', () => {
+    state[key] = conv(+el.value);
+    $('#' + id + '-v').textContent = el.value;
+    setFill(el); persist(); schedule();
+  });
+});
+
+// tabs (mobile)
+function setTab(name){
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+  $$('.sec').forEach(s => s.classList.toggle('active', s.dataset.sec === name));
+}
+$$('.tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
+setTab('shape');
+
+// shuffle / back
+function shuffle(){ past.push(state.seed); if (past.length > 60) past.shift(); state.seed = newSeed(); updateSeed(); schedule(); }
+function back(){ if (!past.length) return; state.seed = past.pop(); updateSeed(); schedule(); }
+$('#shuffle').addEventListener('click', shuffle);
+$('#back').addEventListener('click', back);
+document.addEventListener('keydown', e => {
+  if (e.target !== document.body) return;
+  if (e.code === 'Space'){ e.preventDefault(); shuffle(); }
+  else if (e.code === 'ArrowLeft') back();
+});
+
+/* ---------- saving ---------- */
+let downloads = null;
+(async () => { try { if (window.claude && claude.use) downloads = await claude.use('downloads'); } catch (e) {} })();
+
+const toastEl = $('#toast'); let toastT = 0;
+function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2200); }
+
+function exportCanvas(){
+  const z = SIZES[state.size], c = document.createElement('canvas');
+  c.width = z.w; c.height = z.h;
+  render(c.getContext('2d', { willReadFrequently: true }), z.w, z.h, state);
+  return c;
+}
+function showSheet(c){
+  $('#sheet-img').src = c.toDataURL('image/jpeg', .92);
+  $('#sheet').hidden = false;
+}
+$('#sheet-close').addEventListener('click', () => { $('#sheet').hidden = true; $('#sheet-img').removeAttribute('src'); });
+
+let saving = false;
+$('#save').addEventListener('click', async () => {
+  if (saving) return;
+  saving = true;
+  const btn = $('#save'); btn.disabled = true; btn.textContent = 'Preparing…';
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const c = exportCanvas();
+    if (downloads){
+      const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+      try {
+        await downloads.save({ filename: `foldz-${String(state.seed).padStart(5, '0')}.png`, data: blob });
+        toast('Saved');
+      } catch (err) {
+        if (!err || err.code !== 'declined') showSheet(c);
+      }
+    } else if (window.claude) {
+      showSheet(c);
+    } else {
+      // standalone file: share sheet on phones, direct download elsewhere
+      const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+      const name = `foldz-${String(state.seed).padStart(5, '0')}.png`;
+      const file = new File([blob], name, { type: 'image/png' });
+      let done = false;
+      if (navigator.canShare && navigator.canShare({ files: [file] })){
+        try { await navigator.share({ files: [file] }); done = true; }
+        catch (err) { if (err && err.name === 'AbortError') done = true; }
+      }
+      if (!done){
+        try {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+          toast('Saved');
+        } catch (err) { showSheet(c); }
+      }
+    }
+  } finally {
+    saving = false; btn.disabled = false; btn.textContent = 'Save wallpaper';
+  }
+});
+
+/* ---------- lock: no copy/paste, no zoom ---------- */
+(() => {
+  const stop = e => e.preventDefault();
+  ['copy','cut','paste','selectstart','dragstart','gesturestart','gesturechange','gestureend'].forEach(t =>
+    document.addEventListener(t, stop, { passive: false }));
+  document.addEventListener('contextmenu', e => { if (e.target.id !== 'sheet-img') e.preventDefault(); });
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    if (['c','x','v','a','+','-','=','0'].includes(e.key.toLowerCase())) e.preventDefault();
+  });
+  let last = 0;
+  document.addEventListener('touchend', e => {
+    const n = Date.now();
+    if (n - last < 320 && !e.target.closest('input')) e.preventDefault();
+    last = n;
+  }, { passive: false });
+})();
+
+/* refit on any size change (rotation, split view, browser zoom-out, keyboard) */
+['resize','orientationchange'].forEach(t => window.addEventListener(t, () => setTimeout(fit, 60)));
+if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(fit, 60));
+
+sync();
+fit();
+</script>
+</body>
+</html>
